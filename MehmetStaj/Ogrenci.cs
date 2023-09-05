@@ -12,6 +12,6 @@ namespace MehmetStaj
         public string soyad { get; set; }
         public int Numara { get; set; }
         public int OgrenciID { get; set; }
-        public bool exist { get; set; }
+        public int gizli { get; set; }
     }
 }

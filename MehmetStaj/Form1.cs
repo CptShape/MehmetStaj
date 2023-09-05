@@ -16,7 +16,7 @@ namespace MehmetStaj
         // Ekle Düðmesi
         public void button1_Click(object sender, EventArgs e)
         {
-            // Girilen deðer kontrolü
+            // Boþ deðer kontrolü
             if (textBox1.Text == "")
             {
                 MessageBox.Show("Ýsim girmelisiniz.");
@@ -32,6 +32,7 @@ namespace MehmetStaj
                 MessageBox.Show("Numara girmelisiniz.");
                 return;
             }
+            // Numaranýn sayý olma kontrolü
             try
             {
                 int sayi = Int32.Parse(textBox3.Text);
@@ -47,7 +48,7 @@ namespace MehmetStaj
                 isim = textBox1.Text,
                 soyad = textBox2.Text,
                 Numara = Int32.Parse(textBox3.Text),
-                exist = true,
+                gizli = 1,
             };
             Ekle(yeniOgrenci);
         }
@@ -58,19 +59,19 @@ namespace MehmetStaj
             int selectedRowIndex = dataGridView1.SelectedCells[0].RowIndex;
             int studentID = (int)dataGridView1.Rows[selectedRowIndex].Cells["ID"].Value;
             // Ogrenci ID'sinden ogrenciyi bul ve sil(gizle)
-            var ogrenciler = TumOgrencileriGetir();
+            var ogrenciler = Okuma();
             var ogrenci = ogrenciler.FirstOrDefault(p => p.OgrenciID == studentID);
-            ogrenci.exist = false;
+            ogrenci.gizli = 0;
 
             Guncelle(ogrenci);
         }
         // Listele Düðmesi
         private void button4_Click(object sender, EventArgs e)
         {
-            // Tüm ogrencilerden gizlenmiþ olanlarý ele
-            var ogrenciler = TumOgrencileriGetir();
-            ogrenciler = ogrenciler.Where(o => o.exist).ToList();
-            // Öðrencileri önce isim sonra soyada bakarak alfabetik sýraya koy
+            // Tüm ogrencilerden gizli olmayanlarý seç
+            var ogrenciler = Okuma();
+            ogrenciler = ogrenciler.Where(o => o.gizli == 1).ToList();
+            // Kalan öðrencileri önce isim sonra soyada bakarak alfabetik sýraya koy
             ogrenciler = ogrenciler.OrderBy(o => o.isim).ThenBy(o => o.soyad).ToList();
             // DataGrid'e ogrencileri listele
             DataTable dataTable = new DataTable();
@@ -88,7 +89,7 @@ namespace MehmetStaj
         // Arama Düðmesi
         private void button5_Click(object sender, EventArgs e)
         {
-            var ogrenciler = TumOgrencileriGetir();
+            var ogrenciler = Okuma();
             // Filtreleme
             if (textBox1.Text != "") ogrenciler = ogrenciler.Where(p => p.isim == textBox1.Text).ToList();
             if (textBox2.Text != "") ogrenciler = ogrenciler.Where(p => p.soyad == textBox2.Text).ToList();
@@ -113,7 +114,7 @@ namespace MehmetStaj
 
 
 
-        // Veri Güncelleme
+        // DataGrid Otomatik Veri Güncelleme
         private void dataGridView1_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
@@ -129,7 +130,7 @@ namespace MehmetStaj
 
                 int studentID = (int)dataGridView1.Rows[rowIndex].Cells[idColumnIndex].Value;
 
-                var ogrenciler = TumOgrencileriGetir();
+                var ogrenciler = Okuma();
 
                 var ogrenci = ogrenciler.FirstOrDefault(p => p.OgrenciID == studentID);
                 ogrenci.isim = dataGridView1.Rows[rowIndex].Cells[isimColumnIndex].Value.ToString();
@@ -148,7 +149,7 @@ namespace MehmetStaj
         // Ekleme fonksiyonu
         public void Ekle(Ogrenci ogrenci)
         {
-            List<Ogrenci> ogrenciler = TumOgrencileriGetir();
+            List<Ogrenci> ogrenciler = Okuma();
 
             // Ayný numaraya sahip bir öðrenci var mý kontrol et
             bool ayniNumaraVar = ogrenciler.Any(o => o.Numara == ogrenci.Numara);
@@ -160,20 +161,20 @@ namespace MehmetStaj
 
             ogrenci.OgrenciID = ogrenciler.Count > 0 ? ogrenciler.Max(o => o.OgrenciID) + 1 : 1;
             ogrenciler.Add(ogrenci);
-            DosyayaYaz(ogrenciler);
+            Yazma(ogrenciler);
         }
         // Güncelleme fonksiyonu
         public void Guncelle(Ogrenci ogrenci)
         {
-            List<Ogrenci> ogrenciler = TumOgrencileriGetir();
+            List<Ogrenci> ogrenciler = Okuma();
             Ogrenci eskiOgrenci = ogrenciler.FirstOrDefault(o => o.OgrenciID == ogrenci.OgrenciID);
             if (eskiOgrenci != null)
             {
                 eskiOgrenci.isim = ogrenci.isim;
                 eskiOgrenci.soyad = ogrenci.soyad;
                 eskiOgrenci.Numara = ogrenci.Numara;
-                eskiOgrenci.exist = ogrenci.exist;
-                DosyayaYaz(ogrenciler);
+                eskiOgrenci.gizli = ogrenci.gizli;
+                Yazma(ogrenciler);
             }
         }
 
@@ -182,8 +183,8 @@ namespace MehmetStaj
 
 
         // Veri Tabaný
-        // Veri tabanýndan tüm verileri çeker
-        public List<Ogrenci> TumOgrencileriGetir()
+        // Metin belgesinden veri okur ve ogrenci listesi olusturur
+        public List<Ogrenci> Okuma()
         {
             List<Ogrenci> ogrenciler = new List<Ogrenci>();
             if (File.Exists(dosyaAdi))
@@ -202,7 +203,7 @@ namespace MehmetStaj
                                 soyad = parcalar[1],
                                 Numara = Int32.Parse(parcalar[2]),
                                 OgrenciID = Int32.Parse(parcalar[3]),
-                                exist = bool.Parse(parcalar[4])
+                                gizli = Int32.Parse(parcalar[4])
                             };
                             ogrenciler.Add(ogrenci);
                         }
@@ -211,8 +212,8 @@ namespace MehmetStaj
             }
             return ogrenciler;
         }
-        // Tüm verileri veri tabanýna yazar
-        private void DosyayaYaz(List<Ogrenci> ogrenciler)
+        // Ogrenci listesini metin belgesine yazar
+        private void Yazma(List<Ogrenci> ogrenciler)
         {
             ogrenciler = ogrenciler.OrderBy(o => o.isim).ThenBy(o => o.soyad).ToList();
 
@@ -220,11 +221,11 @@ namespace MehmetStaj
             {
                 foreach (Ogrenci ogrenci in ogrenciler)
                 {
-                    sw.WriteLine($"{ogrenci.isim},{ogrenci.soyad},{ogrenci.Numara},{ogrenci.OgrenciID},{ogrenci.exist}");
+                    sw.WriteLine($"{ogrenci.isim},{ogrenci.soyad},{ogrenci.Numara},{ogrenci.OgrenciID},{ogrenci.gizli}");
                 }
             }
 
-            ogrenciler = ogrenciler.Where(o => o.exist).ToList();
+            ogrenciler = ogrenciler.Where(o => o.gizli == 1).ToList();
 
             ogrenciler = ogrenciler.OrderBy(o => o.isim).ThenBy(o => o.soyad).ToList();
 
