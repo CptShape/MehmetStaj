@@ -1,1 +1,8 @@
-asd,asd,1
+Ab,deneme,4,3,False
+Ab,Soyad,3,2,True
+Abo,qwe,7,6,True
+asd,asd,1,4,True
+asd,asd,10,8,True
+asd,eee,9,7,True
+asdd,asdd,16,5,True
+Deneme2,Soyad,2,1,False
